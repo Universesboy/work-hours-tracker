@@ -13,4 +13,24 @@ export interface UserInfo {
   name: string;
   month: number;
   year: number;
+}
+
+export interface MonthlyData {
+  month: number;
+  year: number;
+  totalHours: number;
+  totalIncome: number;
+  averageRate: number;
+  daysWorked: number;
+  targetHours: number;
+  workLog: WorkLogEntry[];
+}
+
+export interface YearlyData {
+  year: number;
+  months: MonthlyData[];
+  totalHours: number;
+  totalIncome: number;
+  averageRate: number;
+  totalDaysWorked: number;
 } 
