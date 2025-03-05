@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/work-hours-tracker/static/css/main.b05fb8cb.css",
+    "main.js": "/work-hours-tracker/static/js/main.8a899023.js",
+    "index.html": "/work-hours-tracker/index.html",
+    "main.b05fb8cb.css.map": "/work-hours-tracker/static/css/main.b05fb8cb.css.map",
+    "main.8a899023.js.map": "/work-hours-tracker/static/js/main.8a899023.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.b05fb8cb.css",
+    "static/js/main.8a899023.js"
+  ]
+}
