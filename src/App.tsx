@@ -112,6 +112,8 @@ const App: React.FC = () => {
     return calculateYearlyData(monthlyDataArray);
   });
 
+  const [isLoading, setIsLoading] = useState(true);
+
   // Save to localStorage whenever userInfo changes
   useEffect(() => {
     localStorage.setItem(USER_INFO_STORAGE_KEY, JSON.stringify(userInfo));
@@ -174,6 +176,16 @@ const App: React.FC = () => {
       }));
     }
   }, [userInfo.month, userInfo.year, allWorkLogs]);
+
+  useEffect(() => {
+    try {
+      // ... existing localStorage loading logic ...
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const handleUserInfoChange = (field: keyof UserInfo, value: string | number) => {
     setUserInfo(prevInfo => ({
@@ -249,23 +261,27 @@ const App: React.FC = () => {
           onToggleView={handleToggleView} 
         />
         
-        {viewMode === 'month' ? (
-          <>
-            <UserInfoForm 
-              userInfo={userInfo}
-              onUserInfoChange={handleUserInfoChange}
-            />
-            <WorkLogTable 
-              workLog={workLog}
-              onEntryChange={handleEntryChange}
-            />
-            <MonthlySummary workLog={workLog} />
-          </>
+        {isLoading ? (
+          <div className="loading">Loading...</div>
         ) : (
-          <YearlySummary 
-            yearlyData={yearlyData} 
-            onMonthSelect={handleMonthSelect} 
-          />
+          viewMode === 'month' ? (
+            <>
+              <UserInfoForm 
+                userInfo={userInfo}
+                onUserInfoChange={handleUserInfoChange}
+              />
+              <WorkLogTable 
+                workLog={workLog}
+                onEntryChange={handleEntryChange}
+              />
+              <MonthlySummary workLog={workLog} />
+            </>
+          ) : (
+            <YearlySummary 
+              yearlyData={yearlyData} 
+              onMonthSelect={handleMonthSelect} 
+            />
+          )
         )}
       </div>
     </ThemeProvider>
