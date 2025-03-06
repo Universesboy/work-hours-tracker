@@ -6,46 +6,69 @@ interface MonthlySummaryProps {
 }
 
 const MonthlySummary: React.FC<MonthlySummaryProps> = ({ workLog }) => {
-  const calculateTotalHours = (): number => {
-    return workLog.reduce((total, entry) => total + entry.totalHours, 0);
-  };
-
-  const calculateTotalIncome = (): number => {
-    return workLog.reduce((total, entry) => {
+  // Memoize calculations to avoid recalculating on each render
+  const calculations = React.useMemo(() => {
+    // Filter entries with hours first to avoid multiple iterations
+    const entriesWithHours = workLog.filter(entry => entry.totalHours > 0);
+    
+    const totalHours = entriesWithHours.reduce((total, entry) => 
+      total + entry.totalHours, 0);
+      
+    const totalIncome = entriesWithHours.reduce((total, entry) => {
       const income = typeof entry.income === 'number' ? entry.income : 0;
       return total + income;
     }, 0);
-  };
-
-  const calculateAverageRate = (): number => {
-    const entriesWithRates = workLog.filter(entry => {
+    
+    const entriesWithRates = entriesWithHours.filter(entry => {
       const hourlyRate = typeof entry.hourlyRate === 'number' ? entry.hourlyRate : 0;
-      return hourlyRate > 0 && entry.totalHours > 0;
+      return hourlyRate > 0;
     });
     
-    if (entriesWithRates.length === 0) return 0;
+    let averageRate = 0;
+    if (entriesWithRates.length > 0) {
+      const weightedRates = entriesWithRates.reduce((sum, entry) => {
+        const hourlyRate = typeof entry.hourlyRate === 'number' ? entry.hourlyRate : 0;
+        return sum + (hourlyRate * entry.totalHours);
+      }, 0);
+      
+      const totalHoursWithRates = entriesWithRates.reduce((sum, entry) => 
+        sum + entry.totalHours, 0);
+      
+      averageRate = weightedRates / totalHoursWithRates;
+    }
     
-    const weightedRates = entriesWithRates.reduce((sum, entry) => {
-      const hourlyRate = typeof entry.hourlyRate === 'number' ? entry.hourlyRate : 0;
-      return sum + (hourlyRate * entry.totalHours);
-    }, 0);
+    const daysWorked = entriesWithHours.length;
+    const averageHoursPerDay = daysWorked > 0 ? totalHours / daysWorked : 0;
+    const averageIncomePerDay = daysWorked > 0 ? totalIncome / daysWorked : 0;
     
-    const totalHoursWithRates = entriesWithRates.reduce((sum, entry) => 
-      sum + entry.totalHours, 0);
+    const targetHours = 60;
+    const remainingHours = Math.max(0, targetHours - totalHours);
+    const progressPercentage = Math.min(100, (totalHours / targetHours) * 100);
     
-    return weightedRates / totalHoursWithRates;
-  };
+    return {
+      totalHours,
+      totalIncome,
+      averageRate,
+      daysWorked,
+      averageHoursPerDay,
+      averageIncomePerDay,
+      targetHours,
+      remainingHours,
+      progressPercentage
+    };
+  }, [workLog]);
 
-  const totalHours = calculateTotalHours();
-  const totalIncome = calculateTotalIncome();
-  const averageRate = calculateAverageRate();
-  const targetHours = 60;
-  const remainingHours = Math.max(0, targetHours - totalHours);
-  const progressPercentage = Math.min(100, (totalHours / targetHours) * 100);
-  
-  const daysWorked = workLog.filter(entry => entry.totalHours > 0).length;
-  const averageHoursPerDay = daysWorked > 0 ? totalHours / daysWorked : 0;
-  const averageIncomePerDay = daysWorked > 0 ? totalIncome / daysWorked : 0;
+  const {
+    totalHours,
+    totalIncome,
+    averageRate,
+    daysWorked,
+    averageHoursPerDay,
+    averageIncomePerDay,
+    targetHours,
+    remainingHours,
+    progressPercentage
+  } = calculations;
 
   return (
     <div className="summary">

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { FaSun, FaMoon } from 'react-icons/fa';
+import { FaSun, FaMoon, FaCalendarAlt, FaChartBar } from 'react-icons/fa';
 
 interface HeaderProps {
   viewMode: 'month' | 'year';
@@ -25,14 +25,17 @@ const Header: React.FC<HeaderProps> = ({ viewMode, onToggleView }) => {
             title={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
           >
             {theme === 'light' 
-              ? '🌙' 
-              : '☀️'}
+              ? <span className="icon"><FaMoon /></span> 
+              : <span className="icon"><FaSun /></span>}
           </button>
           <button 
             className="view-toggle-btn"
             onClick={onToggleView}
           >
-            {viewMode === 'month' ? 'View Yearly Summary' : 'Back to Monthly View'}
+            {viewMode === 'month' 
+              ? <><span className="icon"><FaChartBar /></span> View Yearly Summary</>
+              : <><span className="icon"><FaCalendarAlt /></span> Back to Monthly View</>
+            }
           </button>
         </div>
       </div>

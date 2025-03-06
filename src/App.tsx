@@ -36,19 +36,23 @@ const App: React.FC = () => {
   const [allWorkLogs, setAllWorkLogs] = useState<Record<string, WorkLogEntry[]>>(() => {
     const storedLogs: Record<string, WorkLogEntry[]> = {};
     
-    // Look for all worklog entries in localStorage
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith(WORK_LOG_STORAGE_KEY_PREFIX)) {
-        try {
-          const value = localStorage.getItem(key);
-          if (value) {
-            storedLogs[key.replace(WORK_LOG_STORAGE_KEY_PREFIX, '')] = JSON.parse(value);
+    try {
+      // Look for all worklog entries in localStorage
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(WORK_LOG_STORAGE_KEY_PREFIX)) {
+          try {
+            const value = localStorage.getItem(key);
+            if (value) {
+              storedLogs[key.replace(WORK_LOG_STORAGE_KEY_PREFIX, '')] = JSON.parse(value);
+            }
+          } catch (error) {
+            console.error(`Error parsing worklog for key ${key}:`, error);
           }
-        } catch (error) {
-          console.error(`Error parsing worklog for key ${key}:`, error);
         }
       }
+    } catch (error) {
+      console.error('Error accessing localStorage:', error);
     }
     
     // If no data found, initialize with current month
@@ -179,10 +183,12 @@ const App: React.FC = () => {
 
   useEffect(() => {
     try {
-      // ... existing localStorage loading logic ...
+      // Initial data load is complete
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500); // Small timeout for smoother transition
     } catch (error) {
       console.error('Error loading data:', error);
-    } finally {
       setIsLoading(false);
     }
   }, []);
@@ -207,11 +213,11 @@ const App: React.FC = () => {
     const updatedLog = [...workLog];
     
     // Handle numeric values
-    if (field === 'hourlyRate') {
+    if (field === 'hourlyRate' || field === 'totalHours') {
       const numericValue = value === '' ? 0 : parseFloat(value as string);
       updatedLog[index] = { 
         ...updatedLog[index], 
-        hourlyRate: numericValue 
+        [field]: numericValue 
       };
     } else {
       updatedLog[index] = { 
@@ -229,12 +235,12 @@ const App: React.FC = () => {
     // Calculate income based on hours and rate
     if (field === 'hourlyRate' || field === 'totalHours' || field === 'startTime' || field === 'endTime') {
       const entry = updatedLog[index];
-      // Use explicit property access
+      // Use explicit property access with defaults
       const rate = typeof entry.hourlyRate === 'number' ? entry.hourlyRate : 0;
       const hours = typeof entry.totalHours === 'number' ? entry.totalHours : 0;
       updatedLog[index] = {
         ...entry,
-        income: rate * hours
+        income: parseFloat((rate * hours).toFixed(2)) // Fix precision issues
       };
     }
 
@@ -262,18 +268,25 @@ const App: React.FC = () => {
         />
         
         {isLoading ? (
-          <div className="loading">Loading...</div>
+          <div className="loading">
+            <div className="loading-spinner"></div>
+            <p>Loading your work hour data...</p>
+          </div>
         ) : (
           viewMode === 'month' ? (
             <>
-              <UserInfoForm 
-                userInfo={userInfo}
-                onUserInfoChange={handleUserInfoChange}
-              />
-              <WorkLogTable 
-                workLog={workLog}
-                onEntryChange={handleEntryChange}
-              />
+              <div className="card user-info-card">
+                <UserInfoForm 
+                  userInfo={userInfo}
+                  onUserInfoChange={handleUserInfoChange}
+                />
+              </div>
+              <div className="work-log-section">
+                <WorkLogTable 
+                  workLog={workLog}
+                  onEntryChange={handleEntryChange}
+                />
+              </div>
               <MonthlySummary workLog={workLog} />
             </>
           ) : (

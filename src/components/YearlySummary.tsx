@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { YearlyData, MonthlyData } from '../types';
 import { getMonthName } from '../utils/dateUtils';
 import { getColorForPercentage } from '../utils/summaryUtils';
@@ -12,6 +12,15 @@ interface YearlySummaryProps {
 const YearlySummary: React.FC<YearlySummaryProps> = ({ yearlyData, onMonthSelect }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'months'>('overview');
   const [expandedMonth, setExpandedMonth] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [yearlyData]);
   
   const { year, months, totalHours, totalIncome, averageRate, totalDaysWorked } = yearlyData;
   
@@ -125,109 +134,118 @@ const YearlySummary: React.FC<YearlySummaryProps> = ({ yearlyData, onMonthSelect
         </div>
       </div>
       
-      {activeTab === 'overview' && (
-        <div className="yearly-overview">
-          <div className="overview-cards">
-            <div className="overview-card total-hours">
-              <h3>Total Hours</h3>
-              <div className="card-value">{totalHours.toFixed(1)}</div>
-              <div className="card-subtitle">Hours Worked in {year}</div>
-            </div>
-            
-            <div className="overview-card total-income">
-              <h3>Total Income</h3>
-              <div className="card-value">${totalIncome.toFixed(2)}</div>
-              <div className="card-subtitle">Income Earned in {year}</div>
-            </div>
-            
-            <div className="overview-card average-rate">
-              <h3>Average Rate</h3>
-              <div className="card-value">${averageRate.toFixed(2)}</div>
-              <div className="card-subtitle">Per Hour in {year}</div>
-            </div>
-            
-            <div className="overview-card days-worked">
-              <h3>Days Worked</h3>
-              <div className="card-value">{totalDaysWorked}</div>
-              <div className="card-subtitle">Working Days in {year}</div>
-            </div>
-          </div>
-          
-          {topEarningMonth && (
-            <div className="top-stats">
-              <div className="top-stat-card">
-                <h3>Top Earning Month</h3>
-                <div className="top-stat-value">${topEarningMonth.totalIncome.toFixed(2)}</div>
-                <div className="top-stat-month">{getMonthName(topEarningMonth.month)}</div>
-                <button 
-                  className="view-month-btn"
-                  onClick={() => handleMonthClick(topEarningMonth.month)}
-                >
-                  View Month
-                </button>
+      {isLoading ? (
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          <p>Loading yearly data...</p>
+        </div>
+      ) : (
+        <>
+          {activeTab === 'overview' && (
+            <div className="yearly-overview">
+              <div className="overview-cards">
+                <div className="overview-card total-hours">
+                  <h3>Total Hours</h3>
+                  <div className="card-value">{totalHours.toFixed(1)}</div>
+                  <div className="card-subtitle">Hours Worked in {year}</div>
+                </div>
+                
+                <div className="overview-card total-income">
+                  <h3>Total Income</h3>
+                  <div className="card-value">${totalIncome.toFixed(2)}</div>
+                  <div className="card-subtitle">Income Earned in {year}</div>
+                </div>
+                
+                <div className="overview-card average-rate">
+                  <h3>Average Rate</h3>
+                  <div className="card-value">${averageRate.toFixed(2)}</div>
+                  <div className="card-subtitle">Per Hour in {year}</div>
+                </div>
+                
+                <div className="overview-card days-worked">
+                  <h3>Days Worked</h3>
+                  <div className="card-value">{totalDaysWorked}</div>
+                  <div className="card-subtitle">Working Days in {year}</div>
+                </div>
               </div>
               
-              {topHoursMonth && (
-                <div className="top-stat-card">
-                  <h3>Most Hours</h3>
-                  <div className="top-stat-value">{topHoursMonth.totalHours.toFixed(1)}</div>
-                  <div className="top-stat-month">{getMonthName(topHoursMonth.month)}</div>
-                  <button 
-                    className="view-month-btn"
-                    onClick={() => handleMonthClick(topHoursMonth.month)}
-                  >
-                    View Month
-                  </button>
+              {topEarningMonth && (
+                <div className="top-stats">
+                  <div className="top-stat-card">
+                    <h3>Top Earning Month</h3>
+                    <div className="top-stat-value">${topEarningMonth.totalIncome.toFixed(2)}</div>
+                    <div className="top-stat-month">{getMonthName(topEarningMonth.month)}</div>
+                    <button 
+                      className="view-month-btn"
+                      onClick={() => handleMonthClick(topEarningMonth.month)}
+                    >
+                      View Month
+                    </button>
+                  </div>
+                  
+                  {topHoursMonth && (
+                    <div className="top-stat-card">
+                      <h3>Most Hours</h3>
+                      <div className="top-stat-value">{topHoursMonth.totalHours.toFixed(1)}</div>
+                      <div className="top-stat-month">{getMonthName(topHoursMonth.month)}</div>
+                      <button 
+                        className="view-month-btn"
+                        onClick={() => handleMonthClick(topHoursMonth.month)}
+                      >
+                        View Month
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
+              
+              <div className="monthly-distribution">
+                <h3>Monthly Distribution</h3>
+                <div className="chart-container">
+                  {sortedMonths.map(monthData => {
+                    const maxHeight = 200; // Max bar height in pixels
+                    const maxHours = Math.max(...months.map(m => m.totalHours), 1);
+                    const barHeight = (monthData.totalHours / maxHours) * maxHeight;
+                    const monthProgress = (monthData.totalHours / monthData.targetHours) * 100;
+                    const barColor = getColorForPercentage(monthProgress);
+                    
+                    return (
+                      <div key={monthData.month} className="chart-column">
+                        <div className="chart-bar-container">
+                          <div 
+                            className="chart-bar"
+                            style={{ 
+                              height: `${barHeight}px`,
+                              backgroundColor: barColor
+                            }}
+                          >
+                            <div className="bar-value">{monthData.totalHours.toFixed(0)}</div>
+                          </div>
+                        </div>
+                        <div className="chart-label">
+                          <button 
+                            onClick={() => handleMonthClick(monthData.month)}
+                            className="month-label-btn"
+                          >
+                            {getMonthName(monthData.month).substring(0, 3)}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
           
-          <div className="monthly-distribution">
-            <h3>Monthly Distribution</h3>
-            <div className="chart-container">
-              {sortedMonths.map(monthData => {
-                const maxHeight = 200; // Max bar height in pixels
-                const maxHours = Math.max(...months.map(m => m.totalHours), 1);
-                const barHeight = (monthData.totalHours / maxHours) * maxHeight;
-                const monthProgress = (monthData.totalHours / monthData.targetHours) * 100;
-                const barColor = getColorForPercentage(monthProgress);
-                
-                return (
-                  <div key={monthData.month} className="chart-column">
-                    <div className="chart-bar-container">
-                      <div 
-                        className="chart-bar"
-                        style={{ 
-                          height: `${barHeight}px`,
-                          backgroundColor: barColor
-                        }}
-                      >
-                        <div className="bar-value">{monthData.totalHours.toFixed(0)}</div>
-                      </div>
-                    </div>
-                    <div className="chart-label">
-                      <button 
-                        onClick={() => handleMonthClick(monthData.month)}
-                        className="month-label-btn"
-                      >
-                        {getMonthName(monthData.month).substring(0, 3)}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+          {activeTab === 'months' && (
+            <div className="monthly-breakdown">
+              <div className="months-grid">
+                {sortedMonths.map(monthData => renderMonthCard(monthData))}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
-      
-      {activeTab === 'months' && (
-        <div className="monthly-breakdown">
-          <div className="months-grid">
-            {sortedMonths.map(monthData => renderMonthCard(monthData))}
-          </div>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
